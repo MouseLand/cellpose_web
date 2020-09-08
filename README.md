@@ -1,2 +1,5 @@
 # cellpose_web
-code for cellpose website
+
+cellpose website code + models
+
+note this code does not have the sample images saved to save space
