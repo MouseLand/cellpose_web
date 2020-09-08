@@ -1,0 +1,61 @@
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href={{ url_for('static',filename='styles/style.css') }} />
+  <link rel="icon" href={{ url_for('static',filename='images/cellpose_transparent.png') }}>
+  <title>cellpose</title>
+</head>
+<body>
+
+  <div>
+     <h1><div><img style="vertical-align:middle; float: left" src={{ url_for('static',filename='images/cellpose_transparent.png') }} width="65">
+        <span style="font-weight: 700; color: lightgreen; font-size: 28px">cellpose</span><br>
+        <span style="font-weight: 400; color: lightgray; font-size: 18px"> a generalist algorithm for cellular segmentation </span>
+        <a href="http://www.github.com/mouseland/cellpose" target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/GitHub-Mark-Light-64px.png')}} width="30"></a>
+        <a href="https://www.biorxiv.org/content/10.1101/2020.02.02.931238v1" target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/pdf_logo.png')}} width="30"></a>
+        <a href={{ url_for('docs')}} target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/tools.png')}} width="30"></a>
+       </div>
+     </h1>
+  </div>
+  <hr class="new1">
+
+  <div class="footer">
+  carsen stringer & marius pachitariu
+  </div>
+
+  <a href="{{ url_for('index') }}"><span style="color: lightgreen;">Try a new image</span></a><p>
+
+<div class="row">
+  <div class="column">
+    <center>original image </center>
+    <img src="data:image/png;base64,{{ image }}" width="100%">
+  </div>
+  <div class="column">
+    <center>predicted outlines</center>
+    <img src="data:image/png;base64,{{ outlines }}" width="100%">
+  </div>
+  <div class="column">
+    <center>predicted masks </center>
+    <img src="data:image/png;base64,{{ masks }}" width="100%">
+  </div>
+  <div class="column">
+    <center>predicted cell pose </center>
+    <img src="data:image/png;base64,{{ flow }}" width="100%">
+  </div>
+</div>
+
+ <a href="{{ url_for('download_masks') }}"><span style="color: lightgreen;">{{ download_string }}</span></a><p>
+
+If the results are over-split, then <a href="javascript:history.back()"><span style="color: lightgreen;">go back</span></a> and increase the cell diameter.
+Similarly, if the results are over-merged or cells are missing, then <a href="javascript:history.back()"><span style="color: lightgreen;">go back</span></a> and decrease the cell diameter.
+<br>
+
+(Note: in the actual cellpose software, we have an option to automatically estimate the cell diameter. Also missing are other image augmentations and tiling that improve segmentation performance.)
+<br><br>
+If you like the results, go to the <a href={{url_for('docs')}}><span style="color: lightgreen;">documentation</span></a> or <a href="http://www.github.com/mouseland/cellpose"><span style="color: lightgreen;">github</span></a> to learn how to install cellpose.
+<br>
+<br>
+
+</body>

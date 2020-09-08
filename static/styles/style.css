@@ -1,0 +1,66 @@
+body {
+    background-color: black;
+    color: #f2ffe6;
+    font-size: 1.1em;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin-left: 10px;
+}
+h1 {
+    color: lightgreen;
+}
+hr.new1 {
+  border-top: 1px solid lightgreen;
+}
+
+
+h1 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 28px; font-style: normal; font-variant: normal; font-weight: 700; line-height: 28.4px; }
+h2 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 24px; font-style: normal; font-variant: normal; font-weight: 400; line-height: 15.4px; }
+h3 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 18px; font-style: normal; font-variant: normal; font-weight: 700; line-height: 15.4px; }
+p { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 16px; font-style: normal; font-variant: normal; font-weight: 400; line-height: 20px; }
+blockquote { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 21px; font-style: normal; font-variant: normal; font-weight: 400; line-height: 30px; } pre { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 13px; font-style: normal; font-variant: normal; font-weight: 400; line-height: 18.5714px; }
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 4px;
+}
+
+/* Create three equal columns that sit next to each other */
+.column {
+  flex: 24%;
+  max-width: 24%;
+  padding: 0 4px;
+}
+
+.column img {
+  margin-top: 8px;
+  vertical-align: middle;
+  width: 100%;
+}
+
+/* Responsive layout - makes a two column-layout instead of four columns */
+@media screen and (max-width: 1300px) {
+  .column {
+    flex: 48%;
+    max-width: 48%;
+  }
+}
+
+/* Responsive layout - makes the two columns stack on top of each other instead of next to each other */
+@media screen and (max-width: 500px) {
+  .column {
+    flex: 100%;
+    max-width: 100%;
+  }
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: black;
+  color: gray;
+  font-size: 12px;
+  text-align: center;
+}

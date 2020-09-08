@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--<script src={{ url_for('static',filename='script.js')}}></script>-->
+    <link rel="stylesheet" type="text/css" href={{ url_for('static',filename='styles/style.css') }} />
+    <link rel="icon" href={{ url_for('static',filename='images/cellpose_transparent.png') }}>
+      <title>cellpose</title>
+    </head>
+
+</head>
+<body>
+     <div>
+     <h1><div><img style="vertical-align:middle; float: left" src={{ url_for('static',filename='images/cellpose_transparent.png') }} width="65">
+        <span style="font-weight: 700; color: lightgreen; font-size: 28px">cellpose</span><br>
+        <span style="font-weight: 400; color: lightgray; font-size: 18px"> a generalist algorithm for cellular segmentation  </span>
+        <a href="http://www.github.com/mouseland/cellpose" target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/GitHub-Mark-Light-64px.png')}} width="30"></a>
+        <a href="https://www.biorxiv.org/content/10.1101/2020.02.02.931238v1" target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/pdf_logo.png')}} width="30"></a>
+        <a href={{ url_for('docs')}} target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/tools.png')}} width="30"></a>
+       </div>
+     </h1>
+  </div>
+<hr class="new1">
+
+<div class="footer">
+  carsen stringer & marius pachitariu
+</div>
+
+<br>
+<div class="row">
+  <div class="column">
+<form action={{ url_for('results', filename=filename) }} method="POST">
+  <table>
+    <tr>
+      <td>What to segment</td>
+      <td><select name="net" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+        <option value="cyto" >cytoplasm</option>
+        <option value="nuclei" {% if model==1 %} selected {% endif %}>nuclei</option>
+      </select></td>
+    </tr>
+    <tr>
+      <td>Channel to segment</td>
+<td><select name="chan1" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+  <option value="0">gray</option>
+  <option value="1" {% if chan1==1 %} selected {% endif %}>red</option>
+  <option value="2" {% if chan1==2 %} selected {% endif %}>green</option>
+  <option value="3" {% if chan1==3 %} selected {% endif %}>blue</option>
+</select></td>
+<tr>
+<td>Nuclear channel (if cyto)</td>
+<td><select name="chan2" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+  <option value="0">none</option>
+  <option value="1" {% if chan2==1 %} selected {% endif %}>red</option>
+  <option value="2" {% if chan2==2 %} selected {% endif %}>green</option>
+  <option value="3" {% if chan2==3 %} selected {% endif %}>blue</option>
+</select></td>
+</tr>
+<tr>
+  <td>Avg cell diameter (pixels)</td>
+  <td>
+      <input type="text" name="diam" value="30" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+  </td>
+  </tr>
+<td><input type="submit" value = "submit" /></td>
+</table>
+</form>
+<br>
+  {% if result != None %}
+  <img src="data:image/png;base64,{{ result }}" width="100%">
+</div>
+{% endif %}
+</div>
+(smallest diameter actually used is 15 pixels for cytoplasm model and 7.5 pixels for nuclei model to reduce computation time, computation may take up to 30sec)
+</ul>
+</body>
+</html>

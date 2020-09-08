@@ -1,0 +1,13 @@
+Flask==1.1.1
+gunicorn==19.9.0
+werkzeug==0.16.0
+flask_uploads
+flask_dropzone
+memory_profiler
+numpy
+scipy
+opencv_python
+matplotlib
+numba
+cellpose==0.0.1.9
+

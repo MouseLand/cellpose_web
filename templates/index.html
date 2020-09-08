@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--<script src={{ url_for('static',filename='script.js')}}></script>-->
+  <link rel="stylesheet" type="text/css" href={{ url_for('static',filename='styles/style.css') }} />
+  <link rel="icon" href={{ url_for('static',filename='images/cellpose_transparent.png') }}>
+    <title>cellpose</title>
+
+    {{ dropzone.load() }}
+    {{ dropzone.style('border: 5px dashed lightgreen; margin: 3%; max-width: 400px; max-height: 200px; background-color: #282828;') }}
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-157670348-1"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-157670348-1');
+</script>
+
+</head>
+
+<body>
+  <div>
+     <h1><div><img style="vertical-align:middle; float: left" src={{ url_for('static',filename='images/cellpose_transparent.png') }} width="65">
+        <span style="font-weight: 700; color: lightgreen; font-size: 28px">cellpose</span><br>
+        <span style="font-weight: 400; color: lightgray; font-size: 18px"> a generalist algorithm for cellular segmentation   </span>
+        <a href="http://www.github.com/mouseland/cellpose" target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/GitHub-Mark-Light-64px.png')}} width="30"></a>
+        <a href="https://www.biorxiv.org/content/10.1101/2020.02.02.931238v1" target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/pdf_logo.png')}} width="30"></a>
+        <a href={{ url_for('docs')}} target="_blank">
+        <img style="vertical-align:bottom" src={{ url_for('static',filename='images/tools.png')}} width="30"></a>
+       </div>
+     </h1>
+  </div>
+<hr class="new1">
+
+<div class="footer">
+  carsen stringer & marius pachitariu
+</div>
+
+Check out full documentation <a href={{ url_for('docs')}} target="_blank"><span style="color: lightgreen;">here</span></a>.
+<br>
+      Try cellpose by uploading one PNG or JPG <10 MB. Images are resized to a max size of <b>512x512</b> pixels.
+    {{ dropzone.create(action_view='index') }}
+   or click on an example image from our test set:
+<br>
+<div class="row">
+  {% for item in img %}
+    <a href={{ url_for('image_plot_demo', filename=item,
+                model=model[loop.index-1], chan1=chan1[loop.index-1], chan2=chan2[loop.index-1]) }}>
+      <img src={{ url_for('static', filename='images/'+item) }} height="200">
+    </a>
+  {% endfor %}
+</div>
+
+</body>
+</html>
