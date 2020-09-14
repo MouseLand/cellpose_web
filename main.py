@@ -289,11 +289,11 @@ def segment():
             keep_size = config.get("keep_size", False)
 
             # scale it back to keep the orignal size
-            target_size = img.shape[:2]
+            target_size = original_img.shape[:2]
             if keep_size:
-                mask = cv2.resize(mask, target_size)
-                flow = cv2.resize(flow, target_size)
-                img = cv2.resize(img, target_size)
+                mask = cv2.resize(mask.astype('float32'), target_size).astype('uint16') 
+                flow = cv2.resize(flow.astype('float32'), target_size).astype('uint8') 
+                img = cv2.resize(img.astype('float32'), target_size).astype('uint8')
 
             results = {"success": True, "input_shape": original_img.shape}
             outputs = config.get("outputs", "mask").split(",")

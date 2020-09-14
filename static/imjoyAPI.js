@@ -6,27 +6,100 @@ const toBase64 = file => new Promise((resolve, reject) => {
     reader.onload = () => resolve(reader.result);
     reader.onerror = error => reject(error);
 });
+
+const ndarrayToBase64 = async (array) =>{
+  let w, h, cc, depth;
+  if(array._rdtype === 'uint16'){
+    depth = 16;
+  }
+  else if(array._rdtype === 'uint8'){
+    depth = 8;
+  }
+  else
+    throw "dtype must be 'uint16' or 'uint8'";
+  
+  if(array._rshape.length === 2){
+    cc = 1;
+  }
+  else if(array._rshape.length === 3){
+    cc = array._rshape[2]
+  }
+  else{
+    throw "invalid dimension number: " + array._rshape.length
+  }
+  w = array._rshape[1]
+  h = array._rshape[0]
+  // encode the array into a png file
+  return await toBase64(new Blob([UPNG.encodeLL([array._rvalue], w, h, cc, 0, depth)]))
+}
+
+const base64ToNdArray = async base64 => {
+  const dataUrl = "data:application/octet-binary;base64," + base64;
+  const buffer = await fetch(dataUrl)
+    .then(res => res.arrayBuffer())
+  const imgObj = UPNG.decode(buffer)
+  let dtype, channels;
+  // gray
+  if(imgObj.ctype === 0){
+    channels = 1
+  }
+  // gray + alpha
+  else if(imgObj.ctype === 4){
+    channels = 2
+  }
+  // RGB + alpha
+  else if(imgObj.ctype === 6){
+    channels = 4
+  }
+  else{
+    channels = 3
+  }
+  if(imgObj.depth === 16){
+    dtype = 'uint16';
+  }
+  else if(imgObj.depth === 8){
+    dtype = 'uint8';
+  }
+  else{
+    throw "invalid depth: " + imgObj.depth
+  }
+  return {
+    _rtype: "ndarray",
+    _rshape: [imgObj.height, imgObj.width, channels],
+    _rdtype: dtype,
+    _rvalue: imgObj.data.slice(0, imgObj.height* imgObj.width* channels*(imgObj.depth/8)).buffer
+  }
+}
+
 const plot_titles = {
   "img": "original image",
   "outline": "predicted outlines",
   "overlay": "predicted masks",
   "flow": "predicted cell pose"
 }
+
 async function segment(config){
   document.getElementById("loader").style.display = "block";
   document.getElementById("main").style.display = "none";
   document.getElementById("result-display").style.display = "block";
   document.getElementById("results").style.display = "none";
   document.getElementById("results").innerHTML = "";
+  let return_type = 'base64';
   try{
     let fileBase64 = config.input;
     if(config.input instanceof File){
       fileBase64 = await toBase64(config.input);
     }
+    else if(config.input._rtype === 'ndarray'){
+      fileBase64 = await ndarrayToBase64(config.input)
+      // if the input type is ndarray, set the return type to ndarray
+      return_type = 'ndarray';
+    }
     else if(config.input.startsWith('http')){
       const blob = await fetch(config.input).then(r => r.blob());
       fileBase64 = await toBase64(blob);
     }
+
     if(fileBase64.startsWith('data:'))
       fileBase64 = fileBase64.split(';base64,')[1]
     const formData = new FormData();
@@ -36,8 +109,9 @@ async function segment(config){
     formData.append('chan1', config.chan1 || "0");
     formData.append('chan2', config.chan2 || "0");
     formData.append('diam', config.diam || "30");
+    formData.append('keep_size', config.keep_size || false);
     // possible outputs: geojson,mask,flow,img,outline_plot,overlay_plot,flow_plot,img_plot
-    formData.append('outputs', config.outputs || "outline_plot,overlay_plot,flow_plot,img_plot");
+    formData.append('outputs', config.outputs || "mask,outline_plot,overlay_plot,flow_plot,img_plot");
     
     const response = await fetch("/segment", {
       method: 'POST',
@@ -88,7 +162,16 @@ async function segment(config){
         resultsElm.appendChild(disp)
         disp.children[1].src = "data:image/png;base64," + result.flow_plot;
       }
-    
+      
+      // convert base64 to ndarray
+      if(return_type === 'ndarray'){
+        if(result.mask){
+          result.mask = await base64ToNdArray(result.mask)
+        }
+        if(result.flow){
+          result.flow = await base64ToNdArray(result.flow)
+        }
+      }
       const info = document.createElement("P")
       info.innerHTML = `Done! Execution time: ${result.execution_time}; Timestamp: ${result.timestamp}`
       resultsElm.append(info);
