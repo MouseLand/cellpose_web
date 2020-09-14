@@ -23,6 +23,10 @@ async function segment(config){
     if(config.input instanceof File){
       fileBase64 = await toBase64(config.input);
     }
+    else if(config.input.startsWith('http')){
+      const blob = await fetch(config.input).then(r => r.blob());
+      fileBase64 = await toBase64(blob);
+    }
     if(fileBase64.startsWith('data:'))
       fileBase64 = fileBase64.split(';base64,')[1]
     const formData = new FormData();
@@ -109,11 +113,6 @@ async function runSegmentation(){
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-  const display = document.createElement('DIV')
-  display.id = "result-display"
-  display.innerHTML = '<img id="loader" src="static/images/loader.gif" style="width:300px;">' +
-    '<div id="results" class="row"></div>';
-  document.body.appendChild(display);
   document.getElementById("loader").style.display = "none";
   document.getElementById("result-display").style.display = "none";
   // check if it's inside an iframe
@@ -121,12 +120,15 @@ document.addEventListener('DOMContentLoaded', function(){
   if(window.self !== window.top && location.pathname === '/'){
     loadImJoyRPC().then(async (imjoyRPC)=>{
         const api = await imjoyRPC.setupRPC({name: 'CellPose', description: 'a generalist algorithm for cellular segmentation'});
-        function setup(){
-            api.log('CellPose initialized.')
+        async function setup(){
+          await api.log('CellPose initialized.')
         }
         
-        function run(){
-
+        async function run(ctx){
+          if(ctx.data && ctx.data.input){
+            const results = await segment({input: ctx.data.input, outputs: "mask,flow,img_plot,overlay_plot,outline_plot,flow_plot"})
+            console.log('CellPose segmentation results:', results)
+          }
         }
         // Importantly, you need to call `api.export(...)` in order to expose the api for your web application
         api.export({setup, run, segment});

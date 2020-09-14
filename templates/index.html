@@ -24,7 +24,7 @@
       }
     </style>
     <script src="https://lib.imjoy.io/imjoy-loader.js"></script>
-    <script src="static/imjoyAPI.js"></script>
+    <script src="static/imjoyAPI.js?20200914"></script>
 </head>
 
 <body>
@@ -64,6 +64,11 @@
         <img src={{ url_for('static', filename='images/'+item) }} height="200">
       </a>
     {% endfor %}
+  </div>
+</div>
+<div id="result-display">
+  <img id="loader" src="static/images/loader.gif" style="width:300px;">
+  <div id="results" class="row">
   </div>
 </div>
 </body>
