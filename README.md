@@ -33,7 +33,7 @@ image = ...
 result = await cellpose.segment({"input": image, "diam": 30, "net": "cyto", "chan1": 1, "chan2": 3, "outputs": "flow,mask,outline_plot,overlay_plot"})
 ```
 
-You can find a live demo [here](https://ij.imjoy.io/?plugin=https://gist.github.com/oeway/c9592f23c7ee147085f0504d2f3e993a) with its [source code in Javascript](https://gist.github.com/oeway/c9592f23c7ee147085f0504d2f3e993a). For Python, here is an example notebook [here](https://gist.github.com/oeway/cec7b38e0a8fcda294de5362c07072f0).
+You can find a live demo [here](https://ij.imjoy.io/?plugin=https://gist.github.com/oeway/c9592f23c7ee147085f0504d2f3e993a) with its [source code in Javascript](https://gist.github.com/oeway/c9592f23c7ee147085f0504d2f3e993a). For Python, [here](https://gist.github.com/oeway/cec7b38e0a8fcda294de5362c07072f0) is an example notebook.
 
 
 
