@@ -103,7 +103,6 @@ def get_mask(y, rpad=20, nmax=20):
 
     ibad = np.ones(len(pix), 'bool')
     for k in range(len(pix)):
-        #print(pix[k][0].size)
         if pix[k][0].size<nmax:
             ibad[k] = 0
 
@@ -136,7 +135,6 @@ def reshape(data, channels=[0,0]):
         else:
             data = data[:,:,chanid[0]]
             data = np.expand_dims(data, axis=-1)
-        print(data.shape)
     if len(channels)>1 and data.shape[-1]==1:
         data = np.concatenate((data, np.zeros_like(data)), axis=-1)
     elif len(channels)==1 and data.shape[-1]>1:
@@ -351,9 +349,7 @@ class CellposeModel():
 
     def eval(self, data, channels=[0,0], do_3D=False):
         batch_size=8
-        print(data.shape)
         data = reshape(data, channels=channels)
-        print(data.shape)
         if self.pretrained_model=='nuclei':
             data = data[:1]
         # rescale image
@@ -364,7 +360,6 @@ class CellposeModel():
         nimg = x.shape[0]
         flows = [[],[],[],[]]
         x, pads = pad_image_CS(x)
-        print(x.shape)
         for ibatch in range(0,nimg,batch_size):
             X = nd.array(x[ibatch:ibatch+batch_size], ctx=self.device)
             # run network

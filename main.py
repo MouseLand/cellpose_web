@@ -1,8 +1,8 @@
-from flask import Flask, redirect, render_template, request, session, url_for, Response, send_file, send_from_directory
+from flask import Flask, redirect, render_template, request, session, url_for, Response, send_file, send_from_directory, jsonify
 from werkzeug.datastructures import FileStorage
 from flask_dropzone import Dropzone
 from flask_uploads import UploadSet, configure_uploads, IMAGES, patch_request_class
-import urllib, os, io, datetime
+import urllib, os, io, datetime, time
 import numpy as np
 import mxnet as mx
 import cv2
@@ -11,6 +11,8 @@ import matplotlib
 import base64
 from cellpose import models, plot
 import gc
+from utils import mask_to_geojson
+import imageio
 
 matplotlib.rc('axes', edgecolor='w')
 matplotlib.rc('xtick', color='w', labelsize=10)
@@ -71,12 +73,13 @@ def sample_props():
     models = []
     images = []
     for k,c in enumerate(chan1):
-        images.append('img%02d.png'%k)
-        models.append(0)
-        if c==2:
-            chan2.append(3)
-        else:
-            chan2.append(0)
+        if os.path.exists('static/images/img%02d.png'%k):
+            images.append('img%02d.png'%k)
+            models.append(0)
+            if c==2:
+                chan2.append(3)
+            else:
+                chan2.append(0)
     return images, models, chan1, chan2
 
 def remove_temp():
@@ -111,6 +114,39 @@ def img_to_html(img, outpix=None, axis_on=False):
     fig.clf()
     plt.close(fig)
     return img_html
+
+def cellpose_segment(img, config):
+    if config["net"]=='cyto':
+        diam_mean = 27
+    else:
+        diam_mean = 15
+    try:
+        if float(config["diam"])==30:
+            rsz = 1.0
+        else:
+            rsz = diam_mean/(float(config["diam"])*(np.pi**0.5/2))
+    except:
+        rsz = 1.0
+    rsz = np.minimum(2., rsz)
+    #isize = int(rsz * min(288, min(img.shape[0], img.shape[1])))
+    img = image_resize(img)
+    if img.ndim<3:
+        img = img[:,:,np.newaxis]
+    model.net.load_parameters('static/models/%s_0'%config["net"])
+    model.net.collect_params().setattr('grad_req', 'null')
+    channels = [int(config["chan1"]), int(config["chan2"])]
+    if config["net"]!='cyto':
+        channels[1] = 0
+    masks, flows, _ = model.eval([img], rescale=[rsz], channels=channels, tile=False, jit=True)
+    masks, flows = masks[0], flows[0][0]
+    if channels[1]==0:
+        if channels[0]==0:
+            img = np.tile(np.uint8(np.float32(img).mean(axis=-1))[:,:,np.newaxis], (1,1,3))
+        else:
+            for i in range(img.shape[-1]):
+                if i!=channels[0]-1:
+                    img[:,:,i] = 0
+    return masks, flows, img
 
 @app.route('/docs')
 def docs():
@@ -186,42 +222,10 @@ def index():
 @app.route('/results/<filename>', methods=['POST'])
 def results(filename):
     if request.method == 'POST':
-        result = request.form
-        val = []
+        config = request.form
         if filename=='user':
-            for key, value in result.items():
-                val.append(value)
-            img = url_to_image(session['file_url'])
-            if val[0]=='cyto':
-                diam_mean = 27
-            else:
-                diam_mean = 15
-            try:
-                if float(val[-1])==30:
-                    rsz = 1.0
-                else:
-                    rsz = diam_mean/(float(val[-1])*(np.pi**0.5/2))
-            except:
-                rsz = 1.0
-            rsz = np.minimum(2., rsz)
-            #isize = int(rsz * min(288, min(img.shape[0], img.shape[1])))
-            img = image_resize(img)
-            if img.ndim<3:
-                img = img[:,:,np.newaxis]
-            model.net.load_parameters('static/models/%s_0'%val[0])
-            model.net.collect_params().setattr('grad_req', 'null')
-            channels = [int(val[1]), int(val[2])]
-            if val[0]!='cyto':
-                channels[1] = 0
-            masks, flows, _ = model.eval([img], rescale=[rsz], channels=channels, tile=False, jit=True)
-            masks, flows = masks[0], flows[0][0]
-            if channels[1]==0:
-                if channels[0]==0:
-                    img = np.tile(np.uint8(np.float32(img).mean(axis=-1))[:,:,np.newaxis], (1,1,3))
-                else:
-                    for i in range(img.shape[-1]):
-                        if i!=channels[0]-1:
-                            img[:,:,i] = 0
+            img_input = url_to_image(session['file_url'])
+            masks, flows, img = cellpose_segment(img_input, config.to_dict())
             #masks, flows = np.zeros_like(img[:,:,0]), np.zeros_like(img[:,:,0])
             outpix = plot.plot_outlines(masks)
             overlay = plot.mask_overlay(img, masks)
@@ -270,6 +274,61 @@ def results(filename):
                                 image=img_html,
                                 download_string=download_string)
         #return render_template('results.html', file_url='/tmp/%s_masks.png'%session['time'])
+
+@app.route("/segment", methods=['POST'])
+def segment():
+    if request.method == 'POST':
+        try:
+            start_time = time.time()
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+            config = request.form.to_dict()
+            input64 = config["input"]
+            img_requested = base64.b64decode(input64) # request.files['file'].read()
+            original_img = imageio.imread(img_requested, format=config.get("format"))
+            mask, flow, img = cellpose_segment(original_img, config)
+            keep_size = config.get("keep_size", False)
+
+            # scale it back to keep the orignal size
+            target_size = img.shape[:2]
+            if keep_size:
+                mask = cv2.resize(mask, target_size)
+                flow = cv2.resize(flow, target_size)
+                img = cv2.resize(img, target_size)
+
+            results = {"success": True, "input_shape": original_img.shape}
+            outputs = config.get("outputs", "mask").split(",")
+            if "geojson" in outputs:
+                geojson_features = mask_to_geojson(mask)
+                results["geojson"] = geojson_features
+            if "img" in outputs:
+                _, buffer = cv2.imencode('.png', img)
+                img64 = base64.b64encode(buffer).decode()
+                results["img"] = img64
+            if "flow" in outputs:
+                _, buffer = cv2.imencode('.png', flow)
+                flow64 = base64.b64encode(buffer).decode()
+                results["flow"] = flow64
+            if "mask" in outputs:
+                _, buffer = cv2.imencode('.png', mask.astype('uint16'))
+                mask64 = base64.b64encode(buffer).decode()
+                results["mask"] = mask64
+            if "outline_plot" in outputs:
+                outpix = plot.plot_outlines(mask)
+                results["outline_plot"] = img_to_html(img, outpix=outpix)
+            if "overlay_plot" in outputs:
+                overlay = plot.mask_overlay(img, mask)
+                results["overlay_plot"] = img_to_html(overlay)
+            if "flow_plot" in outputs:
+                results["flow_plot"] = img_to_html(flow)
+            if "img_plot" in outputs:
+                results["img_plot"] = img_to_html(img)
+
+            results["execution_time"] = time.time() - start_time
+            results["timestamp"] = timestamp
+            print(f'{results["timestamp"]}: Successfully segmented an image in {results["execution_time"]} s.', flush=True)
+            return jsonify(results)
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)})
 
 
 @app.route("/models/<filename>")
