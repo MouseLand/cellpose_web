@@ -78,117 +78,6 @@ const plot_titles = {
   "flow": "predicted cell pose"
 }
 
-async function segment(config){
-  document.getElementById("loader").style.display = "block";
-  document.getElementById("main").style.display = "none";
-  document.getElementById("result-display").style.display = "block";
-  document.getElementById("results").style.display = "none";
-  document.getElementById("results").innerHTML = "";
-  let return_type = 'base64';
-  try{
-    let fileBase64 = config.input;
-    if(config.input instanceof File){
-      fileBase64 = await toBase64(config.input);
-    }
-    else if(config.input._rtype === 'ndarray'){
-      fileBase64 = await ndarrayToBase64(config.input)
-      // if the input type is ndarray, set the return type to ndarray
-      return_type = 'ndarray';
-    }
-    else if(config.input.startsWith('http')){
-      const blob = await fetch(config.input).then(r => r.blob());
-      fileBase64 = await toBase64(blob);
-    }
-
-    if(fileBase64.startsWith('data:'))
-      fileBase64 = fileBase64.split(';base64,')[1]
-    const formData = new FormData();
-    formData.append('input', fileBase64);
-    // formData.append('format', "png");
-    formData.append('net', config.net || "cyto");
-    formData.append('chan1', config.chan1 || "0");
-    formData.append('chan2', config.chan2 || "0");
-    formData.append('diam', config.diam || "30");
-    formData.append('keep_size', config.keep_size || false);
-    // possible outputs: geojson,mask,flow,img,outline_plot,overlay_plot,flow_plot,img_plot
-    formData.append('outputs', config.outputs || "mask,outline_plot,overlay_plot,flow_plot,img_plot");
-    
-    const response = await fetch("/segment", {
-      method: 'POST',
-      mode: 'cors',
-      body: formData
-    })
-    const result = await response.json()
-    if(result.success){
-      const resultsElm = document.getElementById("results");
-      if(result.img_plot){
-        const disp = document.createElement("div");
-        disp.classList.add("column");
-        disp.innerHTML = `
-        <center>${plot_titles["img"]} </center>
-        <img width="100%">
-        `
-        resultsElm.appendChild(disp)
-        disp.children[1].src = "data:image/png;base64," + result.img_plot;
-      }
-      if(result.outline_plot){
-        const disp = document.createElement("div");
-        disp.classList.add("column");
-        disp.innerHTML = `
-        <center>${plot_titles["outline"]} </center>
-        <img width="100%">
-        `
-        resultsElm.appendChild(disp)
-        disp.children[1].src = "data:image/png;base64," + result.outline_plot;
-      }
-      
-      if(result.overlay_plot){
-        const disp = document.createElement("div");
-        disp.classList.add("column");
-        disp.innerHTML = `
-        <center>${plot_titles["overlay"]} </center>
-        <img width="100%">
-        `
-        resultsElm.appendChild(disp)
-        disp.children[1].src = "data:image/png;base64," + result.overlay_plot;
-      }
-      if(result.flow_plot){
-        const disp = document.createElement("div");
-        disp.classList.add("column");
-        disp.innerHTML = `
-        <center>${plot_titles["flow"]} </center>
-        <img width="100%">
-        `
-        resultsElm.appendChild(disp)
-        disp.children[1].src = "data:image/png;base64," + result.flow_plot;
-      }
-      
-      // convert base64 to ndarray
-      if(return_type === 'ndarray'){
-        if(result.mask){
-          result.mask = await base64ToNdArray(result.mask)
-        }
-        if(result.flow){
-          result.flow = await base64ToNdArray(result.flow)
-        }
-      }
-      const info = document.createElement("P")
-      info.innerHTML = `Done! Execution time: ${result.execution_time}; Timestamp: ${result.timestamp}`
-      resultsElm.append(info);
-      resultsElm.style.display = "block";
-      return result
-    }
-    else
-      throw new Error(result.error)
-  }
-  catch(e){
-    document.getElementById("results").style.display = "none";
-    throw e
-  }
-  finally{
-    document.getElementById("loader").style.display = "none";
-  }
-}
 async function runSegmentation(){
   const elm = document.getElementById("input-file");
   const result = await segment({input: elm.files[0], outputs: "mask,geojson,outline_plot,img_plot"})
@@ -197,7 +86,7 @@ async function runSegmentation(){
 
 document.addEventListener('DOMContentLoaded', function(){
   document.getElementById("loader").style.display = "none";
-  document.getElementById("result-display").style.display = "none";
+  document.getElementById("imjoy-display").style.display = "none";
   // check if it's inside an iframe
   // only activate for home page
   if(window.self !== window.top && location.pathname === '/'){
@@ -213,8 +102,180 @@ document.addEventListener('DOMContentLoaded', function(){
             console.log('CellPose segmentation results:', results)
           }
         }
+
+        function saveConfig(config){
+          // save config to localstorage
+          window.localStorage.setItem("cellposeConfig", JSON.stringify(config));
+        }
+
+        function showConfig(){
+          return new Promise((resolve, reject)=>{
+            document.getElementById("main").style.display = "none";
+            document.getElementById("imjoy-display").style.display = "block";
+            document.getElementById("results").style.display = "none";
+            document.getElementById("config").style.display = "block";
+            try{
+              const c = window.localStorage.getItem("cellposeConfig");
+              if(c){
+                // load config into the html form
+                const savedConfig=JSON.parse(c);
+                document.getElementById("net").value = savedConfig.net;
+                document.getElementById("chan1").value = savedConfig.chan1;
+                document.getElementById("chan2").value = savedConfig.chan2;
+                document.getElementById("diam").value = savedConfig.diam;
+                document.getElementById("invert").checked = savedConfig.invert;
+                document.getElementById("keep-size").checked = savedConfig.keep_size;
+              }
+            }
+            catch(e){
+              console.error(e)
+            }
+
+            document.getElementById("save-config").onclick = ()=>{
+              // obtain config from the html form
+              const config = {
+                net: document.getElementById("net").value,
+                chan1: document.getElementById("chan1").value,
+                chan2: document.getElementById("chan2").value,
+                diam: document.getElementById("diam").value,
+                invert: document.getElementById("invert").checked,
+                keep_size: document.getElementById("keep-size").checked,
+              }
+              saveConfig(config);
+              resolve(config)
+              api.close();
+            }
+            api.on("close", ()=>{
+              reject("closed")
+            });
+          })
+        }
+
+        async function segment(config){
+          document.getElementById("loader").style.display = "block";
+          document.getElementById("main").style.display = "none";
+          document.getElementById("imjoy-display").style.display = "block";
+          document.getElementById("results").style.display = "none";
+          document.getElementById("config").style.display = "none";
+          document.getElementById("results").innerHTML = "";
+          let return_type = 'base64';
+          try{
+            let fileBase64 = config.input;
+            if(config.input instanceof File){
+              fileBase64 = await toBase64(config.input);
+            }
+            else if(config.input._rtype === 'ndarray'){
+              fileBase64 = await ndarrayToBase64(config.input)
+              // if the input type is ndarray, set the return type to ndarray
+              return_type = 'ndarray';
+            }
+            else if(config.input.startsWith('http')){
+              const blob = await fetch(config.input).then(r => r.blob());
+              fileBase64 = await toBase64(blob);
+            }
+
+            if(fileBase64.startsWith('data:'))
+              fileBase64 = fileBase64.split(';base64,')[1]
+
+            let savedconfig = {}
+            try{
+              const c = window.localStorage.getItem("cellposeConfig");
+              if(c) savedconfig=JSON.parse(c);
+            }
+            catch(e){
+              console.error(e)
+              savedconfig = {}
+            }
+            const formData = new FormData();
+            formData.append('input', fileBase64);
+            // formData.append('format', "png");
+            formData.append('net', config.net || savedconfig.net || "cyto");
+            formData.append('chan1', config.chan1 || savedconfig.chan1 || "0");
+            formData.append('chan2', config.chan2 || savedconfig.chan2 || "0");
+            formData.append('diam', config.diam || savedconfig.diam || "30");
+            formData.append('invert', config.invert || savedconfig.invert || false);
+            formData.append('keep_size', config.keep_size || savedconfig.keep_size || false);
+            // possible outputs: geojson,mask,flow,img,outline_plot,overlay_plot,flow_plot,img_plot
+            formData.append('outputs', config.outputs || "mask,outline_plot,overlay_plot,flow_plot,img_plot");
+            
+            const response = await fetch("/segment", {
+              method: 'POST',
+              mode: 'cors',
+              body: formData
+            })
+            const result = await response.json()
+            if(result.success){
+              const resultsElm = document.getElementById("results");
+              if(result.img_plot){
+                const disp = document.createElement("div");
+                disp.classList.add("column");
+                disp.innerHTML = `
+                <center>${plot_titles["img"]} </center>
+                <img width="100%">
+                `
+                resultsElm.appendChild(disp)
+                disp.children[1].src = "data:image/png;base64," + result.img_plot;
+              }
+              if(result.outline_plot){
+                const disp = document.createElement("div");
+                disp.classList.add("column");
+                disp.innerHTML = `
+                <center>${plot_titles["outline"]} </center>
+                <img width="100%">
+                `
+                resultsElm.appendChild(disp)
+                disp.children[1].src = "data:image/png;base64," + result.outline_plot;
+              }
+              
+              if(result.overlay_plot){
+                const disp = document.createElement("div");
+                disp.classList.add("column");
+                disp.innerHTML = `
+                <center>${plot_titles["overlay"]} </center>
+                <img width="100%">
+                `
+                resultsElm.appendChild(disp)
+                disp.children[1].src = "data:image/png;base64," + result.overlay_plot;
+              }
+              if(result.flow_plot){
+                const disp = document.createElement("div");
+                disp.classList.add("column");
+                disp.innerHTML = `
+                <center>${plot_titles["flow"]} </center>
+                <img width="100%">
+                `
+                resultsElm.appendChild(disp)
+                disp.children[1].src = "data:image/png;base64," + result.flow_plot;
+              }
+              
+              // convert base64 to ndarray
+              if(return_type === 'ndarray'){
+                if(result.mask){
+                  result.mask = await base64ToNdArray(result.mask)
+                }
+                if(result.flow){
+                  result.flow = await base64ToNdArray(result.flow)
+                }
+              }
+              const info = document.createElement("P")
+              info.innerHTML = `Done! Execution time: ${result.execution_time}; Timestamp: ${result.timestamp}`
+              resultsElm.append(info);
+              resultsElm.style.display = "block";
+              return result
+            }
+            else
+              throw new Error(result.error)
+          }
+          catch(e){
+            document.getElementById("results").style.display = "none";
+            throw e
+          }
+          finally{
+            document.getElementById("loader").style.display = "none";
+          }
+        }
         // Importantly, you need to call `api.export(...)` in order to expose the api for your web application
-        api.export({setup, run, segment});
+        api.export({setup, run, segment, showConfig});
     })
   }
 }, false);

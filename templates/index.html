@@ -24,7 +24,7 @@
       }
     </style>
     <script src="https://lib.imjoy.io/imjoy-loader.js"></script>
-    <script src="static/imjoyAPI.js?20200914v"></script>
+    <script src="static/imjoyAPI.js?20200915d"></script>
     <script src="static/UPNG.js?20200914u"></script>
     <script src="static/pako.min.js"></script>
 </head>
@@ -68,9 +68,55 @@
     {% endfor %}
   </div>
 </div>
-<div id="result-display">
+<div id="imjoy-display">
   <img id="loader" src="static/images/loader.gif" style="width:300px;">
-  <div id="results" class="row">
+  <div id="results" class="row"></div>
+  <div id="config">
+    <table>
+      <tr>
+        <td>What to segment</td>
+        <td><select id="net" style="width:100%">
+          <option value="cyto" >cytoplasm</option>
+          <option value="nuclei">nuclei</option>
+        </select></td>
+      </tr>
+      <tr>
+      <td>Channel to segment</td>
+      <td><select id="chan1" style="width:100%">
+        <option value="0">gray</option>
+        <option value="1">red</option>
+        <option value="2">green</option>
+        <option value="3">blue</option>
+      </select></td>
+      <tr>
+      <td>Nuclear channel (if cyto)</td>
+      <td><select id="chan2" style="width:100%">
+        <option value="0">none</option>
+        <option value="1">red</option>
+        <option value="2">green</option>
+        <option value="3">blue</option>
+      </select></td>
+      </tr>
+      <tr>
+        <td>Avg cell diameter (pixels)</td>
+        <td>
+            <input type="number" id="diam" value="30" style="width:100%">
+        </td>
+      </tr>
+      <tr>
+        <td>Invert image</td>
+        <td>
+            <input type="checkbox" id="invert" style="width:10%">
+        </td>
+      </tr>
+      <tr>
+        <td>Keep output size</td>
+        <td>
+            <input type="checkbox" id="keep-size" style="width:10%">
+        </td>
+      </tr>
+      <td><button id="save-config">Save</button></td>
+    </table>
   </div>
 </div>
 </body>

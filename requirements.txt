@@ -13,4 +13,5 @@ shapely
 imageio
 scikit-image
 geojson
-cellpose==0.0.1.9
+mxnet_mkl
+cellpose==0.0.3.1

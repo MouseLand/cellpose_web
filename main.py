@@ -9,7 +9,8 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib
 import base64
-from cellpose import models, plot
+from cellpose import models
+from models import plot_outlines, plot_overlay, plot_flows
 import gc
 from utils import mask_to_geojson
 import imageio
@@ -137,7 +138,9 @@ def cellpose_segment(img, config):
     channels = [int(config["chan1"]), int(config["chan2"])]
     if config["net"]!='cyto':
         channels[1] = 0
-    masks, flows, _ = model.eval([img], rescale=[rsz], channels=channels, tile=False, jit=True)
+    invert = config.get("invert", False)
+    # TODO: pass invert to model.eval
+    masks, flows, _ = model.eval([img], rescale=[rsz], channels=channels, tile=False, invert=invert)
     masks, flows = masks[0], flows[0][0]
     if channels[1]==0:
         if channels[0]==0:
@@ -227,16 +230,16 @@ def results(filename):
             img_input = url_to_image(session['file_url'])
             masks, flows, img = cellpose_segment(img_input, config.to_dict())
             #masks, flows = np.zeros_like(img[:,:,0]), np.zeros_like(img[:,:,0])
-            outpix = plot.plot_outlines(masks)
-            overlay = plot.mask_overlay(img, masks)
+            outpix = plot_outlines(masks)
+            overlay = plot_overlay(img, masks)
             overlay_outlines_html = img_to_html(img, outpix=outpix)
             gc.collect()
-            plt.imsave('testfile.png', masks)
-            with open('testfile.png', 'rb') as f:
-                stream = io.BytesIO(f.read())
+            buf = io.BytesIO()
+            plt.imsave(buf, masks)
+            buf.seek(0)
             del masks, outpix
 
-            file = FileStorage(stream=stream, filename='masks1.png')
+            file = FileStorage(stream=buf, filename='masks1.png')
             session['filestring_masks'] = session['filestring'] + '_masks.png'
             filename = photos.save(file, name=session['filestring_masks'])
             session['file_url_masks'] = photos.url(filename)
@@ -286,8 +289,8 @@ def segment():
             img_requested = base64.b64decode(input64) # request.files['file'].read()
             original_img = imageio.imread(img_requested, format=config.get("format"))
             mask, flow, img = cellpose_segment(original_img, config)
-            keep_size = config.get("keep_size", False)
 
+            keep_size = config.get("keep_size", False)
             # scale it back to keep the orignal size
             target_size = original_img.shape[:2]
             if keep_size:
@@ -313,10 +316,10 @@ def segment():
                 mask64 = base64.b64encode(buffer).decode()
                 results["mask"] = mask64
             if "outline_plot" in outputs:
-                outpix = plot.plot_outlines(mask)
+                outpix = plot_outlines(mask)
                 results["outline_plot"] = img_to_html(img, outpix=outpix)
             if "overlay_plot" in outputs:
-                overlay = plot.mask_overlay(img, mask)
+                overlay = plot_overlay(img, mask)
                 results["overlay_plot"] = img_to_html(overlay)
             if "flow_plot" in outputs:
                 results["flow_plot"] = img_to_html(flow)
