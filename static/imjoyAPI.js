@@ -131,6 +131,15 @@ document.addEventListener('DOMContentLoaded', function(){
               console.error(e)
             }
 
+            document.getElementById("reset-config").onclick= ()=>{
+              document.getElementById("net").value = "cyto";
+              document.getElementById("chan1").value = "0";
+              document.getElementById("chan2").value = "0";
+              document.getElementById("diam").value = "30";
+              document.getElementById("invert").checked = false;
+              document.getElementById("keep-size").checked = false;
+            }
+
             document.getElementById("save-config").onclick = ()=>{
               // obtain config from the html form
               const config = {

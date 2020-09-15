@@ -138,8 +138,9 @@ def cellpose_segment(img, config):
     channels = [int(config["chan1"]), int(config["chan2"])]
     if config["net"]!='cyto':
         channels[1] = 0
+    if img.shape[2] == 1:
+        channels = [0, 0]
     invert = config.get("invert", False)
-    # TODO: pass invert to model.eval
     masks, flows, _ = model.eval([img], rescale=[rsz], channels=channels, tile=False, invert=invert)
     masks, flows = masks[0], flows[0][0]
     if channels[1]==0:
