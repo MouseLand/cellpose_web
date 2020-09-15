@@ -31,6 +31,8 @@ Basically, you will be able to show an the cellpose window and call `segment` fu
     # - net: network type,  cyto or nuclei
     # - chan1: cytoplasm channel, grayscale=0, R=1, G=2, B=3
     # - chan2: nuclei channel, grayscale=0, R=1, G=2, B=3
+    # - invert: invert the input image before feeding into cellpose
+    # - keep_size: keep the output size (same as input)
     # - outputs: possbile values are geojson,mask,flow,img,outline_plot,overlay_plot,flow_plot,img_plot
     # the results is a dictionary or object containing different output types depending on the `outputs` argument, e.g. you will get a geojson object if you pass `geojson` in the `outputs` key. For Python if you pass an numpy array, then the returned mask and flow will also be encoded as an numpy array, otherwise, all the images will be saved in png format and encoded as base64 string.
     result = await cellpose.segment({"input": image, "diam": 30, "net": "cyto", "chan1": 1, "chan2": 3, "outputs": "flow,mask,outline_plot,overlay_plot"})
