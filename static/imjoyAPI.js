@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function(){
           }
         }
         // Importantly, you need to call `api.export(...)` in order to expose the api for your web application
-        api.export({setup, run, segment, showConfig});
+        api.export({setup, run, segment, showConfig, saveConfig});
     })
   }
 }, false);
