@@ -6,7 +6,9 @@ import time
 from scipy.ndimage import maximum_filter1d
 import cv2
 from matplotlib.colors import hsv_to_rgb
+import os
 
+#os.environ['KMP_DUPLICATE_LIB_OK']='True'
 nfeat = 128
 sz  = [3, 3, 3, 3, 3]
 sz2 = [3, 3, 3, 3, 3]

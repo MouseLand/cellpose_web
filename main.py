@@ -230,13 +230,25 @@ def results(filename):
         if filename=='user':
             img_input = url_to_image(session['file_url'])
             masks, flows, img = cellpose_segment(img_input, config.to_dict())
+            keep_size = config.to_dict().get("keep_size", False)
+            # scale it back to keep the orignal size
+            target_size = (img_input.shape[1], img_input.shape[0])
+            print(img_input.shape, img.shape)
+            print(np.unique(masks))
+            if (keep_size and 
+                target_size[0]!=img.shape[1] and 
+                target_size[1]!=img.shape[0]):
+                masks = cv2.resize(masks.astype('uint16'), target_size, interpolation=cv2.INTER_NEAREST).astype('uint16') 
+                flows = cv2.resize(flows.astype('float32'), target_size).astype('uint8') 
+                img = img_input
+            print(np.unique(masks))
             #masks, flows = np.zeros_like(img[:,:,0]), np.zeros_like(img[:,:,0])
             outpix = plot_outlines(masks)
             overlay = plot_overlay(img, masks)
             overlay_outlines_html = img_to_html(img, outpix=outpix)
             gc.collect()
             buf = io.BytesIO()
-            plt.imsave(buf, masks)
+            plt.imsave(buf, np.tile(masks[:,:,np.newaxis].astype(np.float32)/masks.max(),(1,1,3)))
             buf.seek(0)
             del masks, outpix
 
@@ -295,10 +307,9 @@ def segment():
             # scale it back to keep the orignal size
             target_size = original_img.shape[:2]
             if keep_size:
-                mask = cv2.resize(mask.astype('float32'), target_size).astype('uint16') 
+                mask = cv2.resize(mask.astype('uint16'), target_size, interpolation=cv2.INTER_NEAREST).astype('uint16') 
                 flow = cv2.resize(flow.astype('float32'), target_size).astype('uint8') 
                 img = cv2.resize(img.astype('float32'), target_size).astype('uint8')
-
             results = {"success": True, "input_shape": original_img.shape}
             outputs = config.get("outputs", "mask").split(",")
             if "geojson" in outputs:
