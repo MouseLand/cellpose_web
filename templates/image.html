@@ -8,7 +8,39 @@
     <link rel="icon" href={{ url_for('static',filename='images/cellpose_transparent.png') }}>
       <title>cellpose</title>
     </head>
-
+    <script>
+      window.saveConfig = function(){
+        // obtain config from the html form
+        const config = {
+          net: document.getElementById("net").value,
+          chan1: document.getElementById("chan1").value,
+          chan2: document.getElementById("chan2").value,
+          diam: document.getElementById("diam").value,
+          invert: document.getElementById("invert").checked,
+          keep_size: document.getElementById("keep-size").checked,
+        }
+        // save config to localstorage
+        window.localStorage.setItem("cellposeConfig", JSON.stringify(config));
+      }
+      document.addEventListener('DOMContentLoaded', function(){
+        try{
+          const c = window.localStorage.getItem("cellposeConfig");
+          if(c){
+            // load config into the html form
+            const savedConfig=JSON.parse(c);
+            document.getElementById("net").value = savedConfig.net;
+            document.getElementById("chan1").value = savedConfig.chan1;
+            document.getElementById("chan2").value = savedConfig.chan2;
+            document.getElementById("diam").value = savedConfig.diam;
+            document.getElementById("invert").checked = savedConfig.invert;
+            document.getElementById("keep-size").checked = savedConfig.keep_size;
+          }
+        }
+        catch(e){
+          console.error(e)
+        }
+      }, false);
+    </script>
 </head>
 <body>
      <div>
@@ -33,18 +65,18 @@
 <br>
 <div class="row">
   <div class="column">
-<form action={{ url_for('results', filename=filename) }} method="POST">
+<form action={{ url_for('results', filename=filename) }} onsubmit="saveConfig()" method="POST">
   <table>
     <tr>
       <td>What to segment</td>
-      <td><select name="net" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+      <td><select name="net" id="net" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
         <option value="cyto" >cytoplasm</option>
         <option value="nuclei" {% if model==1 %} selected {% endif %}>nuclei</option>
       </select></td>
     </tr>
     <tr>
       <td>Channel to segment</td>
-<td><select name="chan1" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+<td><select name="chan1" id="chan1" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
   <option value="0">gray</option>
   <option value="1" {% if chan1==1 %} selected {% endif %}>red</option>
   <option value="2" {% if chan1==2 %} selected {% endif %}>green</option>
@@ -52,7 +84,7 @@
 </select></td>
 <tr>
 <td>Nuclear channel (if cyto)</td>
-<td><select name="chan2" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+<td><select name="chan2" id="chan2" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
   <option value="0">none</option>
   <option value="1" {% if chan2==1 %} selected {% endif %}>red</option>
   <option value="2" {% if chan2==2 %} selected {% endif %}>green</option>
@@ -60,11 +92,23 @@
 </select></td>
 </tr>
 <tr>
-  <td>Avg cell diameter (pixels)</td>
+  <td>Avg cell diameter (in resized pixels, see axes below)</td>
   <td>
-      <input type="text" name="diam" value="30" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+      <input type="text" name="diam" id="diam" value="30" style="width:100%" {% if filename!="user" %} disabled="disabled" {% endif %}>
   </td>
-  </tr>
+</tr>
+<tr>
+  <td>Invert image</td>
+  <td>
+      <input type="checkbox" name="invert" id="invert" style="width:10%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+  </td>
+</tr>
+<tr>
+  <td>Return output in original size</td>
+  <td>
+      <input type="checkbox" name="keep_size" id="keep-size" style="width:10%" {% if filename!="user" %} disabled="disabled" {% endif %}>
+  </td>
+</tr>
 <td><input type="submit" value = "submit" /></td>
 </table>
 </form>

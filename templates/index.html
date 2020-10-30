@@ -13,16 +13,25 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-157670348-1"></script>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'UA-157670348-1');
-</script>
-
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-157670348-1');
+    </script>
+    <style>
+      .column{
+        display: inline-block;
+      }
+    </style>
+    <script src="https://lib.imjoy.io/imjoy-loader.js"></script>
+    <script src="static/imjoyAPI.js?20200915f"></script>
+    <script src="static/UPNG.js?20200914u"></script>
+    <script src="static/pako.min.js"></script>
 </head>
 
 <body>
   <div>
+     <!-- <input type="file" id="input-file" onchange="runSegmentation()"> -->
      <h1><div><img style="vertical-align:middle; float: left" src={{ url_for('static',filename='images/cellpose_transparent.png') }} width="65">
         <span style="font-weight: 700; color: lightgreen; font-size: 28px">cellpose</span><br>
         <span style="font-weight: 400; color: lightgray; font-size: 18px"> a generalist algorithm for cellular segmentation   </span>
@@ -40,21 +49,80 @@
 <div class="footer">
   carsen stringer & marius pachitariu
 </div>
-
-Check out full documentation <a href={{ url_for('docs')}} target="_blank"><span style="color: lightgreen;">here</span></a>.
-<br>
-      Try cellpose by uploading one PNG or JPG <10 MB. Images are resized to a max size of <b>512x512</b> pixels.
-    {{ dropzone.create(action_view='index') }}
-   or click on an example image from our test set:
-<br>
-<div class="row">
-  {% for item in img %}
-    <a href={{ url_for('image_plot_demo', filename=item,
-                model=model[loop.index-1], chan1=chan1[loop.index-1], chan2=chan2[loop.index-1]) }}>
-      <img src={{ url_for('static', filename='images/'+item) }} height="200">
-    </a>
-  {% endfor %}
+<div id="main">
+  Check out full documentation <a href={{ url_for('docs')}} target="_blank"><span style="color: lightgreen;">here</span></a>.
+  <br>
+        Try cellpose by uploading one PNG or JPG <10 MB. Images are resized to a max size of <b>512x512</b> pixels.
+      {{ dropzone.create(action_view='index') }}
+      {% if img|length>0 %}
+      or click on an example image from our test set:
+      {% endif %}
+    
+  <br>
+  <div class="row">
+    {% for item in img %}
+      <a href={{ url_for('image_plot_demo', filename=item,
+                  model=model[loop.index-1], chan1=chan1[loop.index-1], chan2=chan2[loop.index-1]) }}>
+        <img src={{ url_for('static', filename='images/'+item) }} height="200">
+      </a>
+    {% endfor %}
+  </div>
 </div>
+<div id="imjoy-display">
+  <img id="loader" src="static/images/loader.gif" style="width:300px;">
+  <div id="results" class="row"></div>
+  <div id="config">
+    <table>
+      <tr>
+        <td>What to segment</td>
+        <td><select id="net" style="width:100%">
+          <option value="cyto" >cytoplasm</option>
+          <option value="nuclei">nuclei</option>
+        </select></td>
+      </tr>
+      <tr>
+      <td>Channel to segment</td>
+      <td><select id="chan1" style="width:100%">
+        <option value="0">gray</option>
+        <option value="1">red</option>
+        <option value="2">green</option>
+        <option value="3">blue</option>
+      </select></td>
+      <tr>
+      <td>Nuclear channel (if cyto)</td>
+      <td><select id="chan2" style="width:100%">
+        <option value="0">none</option>
+        <option value="1">red</option>
+        <option value="2">green</option>
+        <option value="3">blue</option>
+      </select></td>
+      </tr>
+      <tr>
+        <td>Avg cell diameter (pixels)</td>
+        <td>
+            <input type="number" id="diam" value="30" style="width:100%">
+        </td>
+      </tr>
+      <tr>
+        <td>Invert image</td>
+        <td>
+            <input type="checkbox" id="invert" style="width:10%">
+        </td>
+      </tr>
+      <tr>
+        <td>Keep output size</td>
+        <td>
+            <input type="checkbox" id="keep-size" style="width:10%">
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><button id="reset-config">Reset</button> &nbsp;&nbsp;<button id="save-config">Save</button></td>
+      </tr>
+      
 
+    </table>
+  </div>
+</div>
 </body>
 </html>

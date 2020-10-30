@@ -9,5 +9,9 @@ scipy
 opencv_python
 matplotlib
 numba
-cellpose==0.0.1.9
-
+shapely
+imageio
+scikit-image
+geojson
+mxnet_mkl
+cellpose==0.0.3.1
