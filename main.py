@@ -116,7 +116,7 @@ def img_to_html(img, outpix=None, axis_on=False):
     plt.close(fig)
     return img_html
 
-def cellpose_segment(img, config):
+def cellpose_segment(img_input, config):
     if config["net"]=='cyto':
         diam_mean = 27
     else:
@@ -129,8 +129,8 @@ def cellpose_segment(img, config):
     except:
         rsz = 1.0
     rsz = np.minimum(2., rsz)
-    #isize = int(rsz * min(288, min(img.shape[0], img.shape[1])))
-    img = image_resize(img)
+    #isize = int(rsz * min(288, min(img_input.shape[0], img_input.shape[1])))
+    img = image_resize(img_input)
     if img.ndim<3:
         img = img[:,:,np.newaxis]
     model.net.load_parameters('static/models/%s_0'%config["net"])
@@ -150,6 +150,15 @@ def cellpose_segment(img, config):
             for i in range(img.shape[-1]):
                 if i!=channels[0]-1:
                     img[:,:,i] = 0
+    target_size = (img_input.shape[1], img_input.shape[0])
+    keep_size = config.get("keep_size", False)
+    if (keep_size and 
+            target_size[0]!=img.shape[1] and 
+            target_size[1]!=img.shape[0]):
+        # scale it back to keep the orignal size
+        masks = cv2.resize(masks.astype('uint16'), target_size, interpolation=cv2.INTER_NEAREST).astype('uint16') 
+        flows = cv2.resize(flows.astype('float32'), target_size).astype('uint8') 
+        img = cv2.resize(img.astype('float32'), target_size).astype('uint8')
     return masks, flows, img
 
 @app.route('/docs')
@@ -230,17 +239,6 @@ def results(filename):
         if filename=='user':
             img_input = url_to_image(session['file_url'])
             masks, flows, img = cellpose_segment(img_input, config.to_dict())
-            keep_size = config.to_dict().get("keep_size", False)
-            # scale it back to keep the orignal size
-            target_size = (img_input.shape[1], img_input.shape[0])
-            print(img_input.shape, img.shape)
-            print(np.unique(masks))
-            if (keep_size and 
-                target_size[0]!=img.shape[1] and 
-                target_size[1]!=img.shape[0]):
-                masks = cv2.resize(masks.astype('uint16'), target_size, interpolation=cv2.INTER_NEAREST).astype('uint16') 
-                flows = cv2.resize(flows.astype('float32'), target_size).astype('uint8') 
-                img = img_input
             print(np.unique(masks))
             #masks, flows = np.zeros_like(img[:,:,0]), np.zeros_like(img[:,:,0])
             outpix = plot_outlines(masks)
@@ -302,14 +300,6 @@ def segment():
             img_requested = base64.b64decode(input64) # request.files['file'].read()
             original_img = imageio.imread(img_requested, format=config.get("format"))
             mask, flow, img = cellpose_segment(original_img, config)
-
-            keep_size = config.get("keep_size", False)
-            # scale it back to keep the orignal size
-            target_size = original_img.shape[:2]
-            if keep_size:
-                mask = cv2.resize(mask.astype('uint16'), target_size, interpolation=cv2.INTER_NEAREST).astype('uint16') 
-                flow = cv2.resize(flow.astype('float32'), target_size).astype('uint8') 
-                img = cv2.resize(img.astype('float32'), target_size).astype('uint8')
             results = {"success": True, "input_shape": original_img.shape}
             outputs = config.get("outputs", "mask").split(",")
             if "geojson" in outputs:

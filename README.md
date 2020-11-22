@@ -1,6 +1,6 @@
 # web interface to run cellpose
 
-[![launch ImJoy](https://imjoy.io/static/badge/launch-imjoy-badge.svg)](https://imjoy.io/#/app?plugin=https://cellpose.org)
+[![launch ImJoy](https://imjoy.io/static/badge/launch-imjoy-badge.svg)](https://imjoy.io/#/app?plugin=https://cellpose.org) [![open in ImageJ.JS](https://ij.imjoy.io/assets/badge/open-in-imagej-js-badge.svg)](https://ij.imjoy.io/)
 
 If you'd like to run it on your local computer, run
 ~~~
@@ -41,7 +41,5 @@ Basically, you will be able to show an the cellpose window and call `segment` fu
     print(result["mask"])
 ```
 
-You can find a live demo [here](https://ij.imjoy.io/?plugin=https://gist.github.com/oeway/c9592f23c7ee147085f0504d2f3e993a) with its [source code in Javascript](https://gist.github.com/oeway/c9592f23c7ee147085f0504d2f3e993a). For Python, [here](https://gist.github.com/oeway/cec7b38e0a8fcda294de5362c07072f0) is an example notebook.
-
-
+CellPose is also integrated with ImageJ.JS, you can [![launch ImageJ.JS](https://ij.imjoy.io/assets/badge/launch-imagej-js-badge.svg)](https://ij.imjoy.io), then run it by clicking "Segment with CellPose" in the plugin menu. The source code of the plugin(in JavaScript) is [here](https://gist.github.com/oeway/c9592f23c7ee147085f0504d2f3e993a). For Python, [here](https://gist.github.com/oeway/cec7b38e0a8fcda294de5362c07072f0) is an example notebook.
 
