@@ -150,7 +150,12 @@ document.addEventListener('DOMContentLoaded', function(){
                 invert: document.getElementById("invert").checked,
                 keep_size: document.getElementById("keep-size").checked,
               }
-              saveConfig(config);
+              try {
+                saveConfig(config);
+              }
+              catch(e){
+                console.error(e);
+              }
               resolve(config)
               api.close();
             }
